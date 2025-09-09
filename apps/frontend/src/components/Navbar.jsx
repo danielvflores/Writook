@@ -12,6 +12,7 @@ const Navbar = () => {
     { name: "Mis Historias", href: "/my-stories" },
     { name: "Explorar", href: "/explore" },
     { name: "Crear Historia", href: "/create-story" },
+    { name: "🧪 Editor Test", href: "/editor-test" },
   ];
 
   const toggleMobileMenu = () => {

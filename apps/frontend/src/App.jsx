@@ -3,7 +3,9 @@ import InitialPage from './pages/InitialPage';
 import RegisterPage from './pages/RegisterPage';
 import LoginPage from './pages/LoginPage';
 import HomePage from './pages/HomePage';
+import EditorTest from './pages/EditorTest';
 import useAuth from './config/AuthContext.js';
+import ChapterEditor from './pages/ChapterEditor.jsx';
 import './App.css';
 
 function App() {
@@ -27,6 +29,12 @@ function App() {
         } />
         <Route path="/home" element={
           user ? <HomePage /> : <Navigate to="/" />
+        } />
+        <Route path="/editor-test" element={
+          user ? <EditorTest /> : <Navigate to="/" />
+        } />
+        <Route path="/stories/:storyId/edit/:chapterId" element={
+          user ? <ChapterEditor /> : <Navigate to="/" />
         } />
       </Routes>
     </Router>
