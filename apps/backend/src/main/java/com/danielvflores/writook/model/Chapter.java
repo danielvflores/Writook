@@ -1,11 +1,18 @@
 package com.danielvflores.writook.model;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class Chapter {
     private final String title;
     private final String content;
     private final int number;
 
-    public Chapter(String title, String content, int number) {
+    @JsonCreator
+    public Chapter(
+            @JsonProperty("title") String title, 
+            @JsonProperty("content") String content, 
+            @JsonProperty("number") int number) {
         this.title = title;
         this.content = content;
         this.number = number;

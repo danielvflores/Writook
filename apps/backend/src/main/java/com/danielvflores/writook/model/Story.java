@@ -3,6 +3,8 @@ package com.danielvflores.writook.model;
 import java.util.List;
 
 import com.danielvflores.writook.dto.AuthorDTO;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Story {
     private final String title;
@@ -14,7 +16,16 @@ public class Story {
     private final List<Chapter> chapters; // THIS IS A COMPOSITION RELATIONSHIP, IF THE STORY IS DELETED, THE CHAPTERS ARE DELETED TOO.
     private Long id;
 
-    public Story(String title, String synopsis, AuthorDTO author, double rating, List<String> genres, List<String> tags, List<Chapter> chapters, Long id) {
+    @JsonCreator
+    public Story(
+            @JsonProperty("title") String title, 
+            @JsonProperty("synopsis") String synopsis, 
+            @JsonProperty("author") AuthorDTO author, 
+            @JsonProperty("rating") double rating, 
+            @JsonProperty("genres") List<String> genres, 
+            @JsonProperty("tags") List<String> tags, 
+            @JsonProperty("chapters") List<Chapter> chapters, 
+            @JsonProperty("id") Long id) {
         this.title = title;
         this.synopsis = synopsis;
         this.author = author;

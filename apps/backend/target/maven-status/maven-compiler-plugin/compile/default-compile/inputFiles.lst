@@ -5,6 +5,7 @@ C:\Users\Daniel\OneDrive\Programming\GitHub Projects\Writook\apps\backend\src\ma
 C:\Users\Daniel\OneDrive\Programming\GitHub Projects\Writook\apps\backend\src\main\java\com\danielvflores\writook\WritookApplication.java
 C:\Users\Daniel\OneDrive\Programming\GitHub Projects\Writook\apps\backend\src\main\java\com\danielvflores\writook\dto\ApiResponseDTO.java
 C:\Users\Daniel\OneDrive\Programming\GitHub Projects\Writook\apps\backend\src\main\java\com\danielvflores\writook\security\JwtAuthenticationFilter.java
+C:\Users\Daniel\OneDrive\Programming\GitHub Projects\Writook\apps\backend\src\main\java\com\danielvflores\writook\dto\StoryDraftDTO.java
 C:\Users\Daniel\OneDrive\Programming\GitHub Projects\Writook\apps\backend\src\main\java\com\danielvflores\writook\model\Chapter.java
 C:\Users\Daniel\OneDrive\Programming\GitHub Projects\Writook\apps\backend\src\main\java\com\danielvflores\writook\service\AuthService.java
 C:\Users\Daniel\OneDrive\Programming\GitHub Projects\Writook\apps\backend\src\main\java\com\danielvflores\writook\controller\StoryController.java

@@ -1,85 +1,18 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Editor } from '@tinymce/tinymce-react';
-import useAuth from '../config/AuthContext.js';
 
-export default function ChapterEditor() {
-  const { storyId, chapterId } = useParams(); // Obtener IDs de la URL
+export default function CreateChapter() {
+  const { storyId } = useParams();
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
   
   const [content, setContent] = useState('');
   const [title, setTitle] = useState('');
   const [wordCount, setWordCount] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [storyTitle, setStoryTitle] = useState('');
+  const [loading, setLoading] = useState(false);
   const editorRef = useRef(null);
 
-  // Verificar autenticación al cargar
-  useEffect(() => {
-    if (authLoading) return;
-    
-    if (!user) {
-      alert('❌ Debes iniciar sesión para editar capítulos');
-      navigate('/login');
-      return;
-    }
-    
-    loadChapterData();
-  }, [storyId, chapterId, user, authLoading]);
-
-  const loadChapterData = async () => {
-    try {
-      setLoading(true);
-      
-      // Cargar datos de la historia con autenticación y verificación de propiedad
-      const storyResponse = await fetch(`http://localhost:8080/api/v1/stories/${storyId}/ownership`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-        }
-      });
-      
-      if (storyResponse.ok) {
-        const storyData = await storyResponse.json();
-        setStoryTitle(storyData.title);
-        
-        // Encontrar el capítulo específico
-        const chapter = storyData.chapters.find(ch => ch.number === parseInt(chapterId));
-        if (chapter) {
-          setTitle(chapter.title);
-          setContent(chapter.content);
-          // Calcular palabras iniciales
-          const textContent = chapter.content.replace(/<[^>]*>/g, '');
-          const words = textContent.trim().split(/\s+/).length;
-          setWordCount(textContent.trim() === '' ? 0 : words);
-        } else {
-          alert('❌ Capítulo no encontrado');
-          navigate(`/myworks/${storyId}`);
-        }
-      } else {
-        const errorMessage = await storyResponse.text();
-        console.error('❌ Error del servidor:', errorMessage);
-        
-        if (storyResponse.status === 403) {
-          alert('❌ No tienes permiso para editar esta historia');
-        } else if (storyResponse.status === 404) {
-          alert('❌ Historia no encontrada');
-        } else {
-          alert('❌ Error: ' + errorMessage);
-        }
-        navigate('/home');
-      }
-      
-    } catch (error) {
-      console.error('❌ Error al cargar capítulo:', error);
-      alert('❌ Error de conexión al cargar el capítulo');
-      navigate('/home');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Configuración de TinyMCE (igual que antes)
+  // Configuración de TinyMCE
   const editorConfig = {
     height: 500,
     menubar: false,
@@ -120,7 +53,6 @@ export default function ChapterEditor() {
     }
   };
 
-  // Manejar cambios en el contenido
   const handleEditorChange = (content, editor) => {
     setContent(content);
     const textContent = editor.getContent({ format: 'text' });
@@ -128,7 +60,6 @@ export default function ChapterEditor() {
     setWordCount(textContent.trim() === '' ? 0 : words);
   };
 
-  // Guardar cambios del capítulo
   const handleSave = async () => {
     if (!title.trim()) {
       alert('❌ Por favor, ingresa un título para el capítulo');
@@ -140,75 +71,85 @@ export default function ChapterEditor() {
       return;
     }
 
+    setLoading(true);
     try {
+      // Primero, obtener la historia para saber cuántos capítulos tiene
+      const storyResponse = await fetch(`http://localhost:8080/api/v1/stories/${storyId}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        }
+      });
+      
+      if (!storyResponse.ok) throw new Error('No se pudo cargar la historia');
+      
+      const storyData = await storyResponse.json();
+      const nextChapterNumber = storyData.chapters.length + 1;
+
       const chapterData = {
         title: title.trim(),
         content: content,
-        number: parseInt(chapterId) // Asumiendo que chapterId es el número
+        number: nextChapterNumber
       };
 
-      const response = await fetch(`http://localhost:8080/api/v1/stories/${storyId}/edit/${chapterId}`, {
+      // Crear el capítulo agregándolo a la historia
+      const updatedChapters = [...storyData.chapters, chapterData];
+      const updatedStory = {
+        ...storyData,
+        chapters: updatedChapters
+      };
+
+      const response = await fetch(`http://localhost:8080/api/v1/stories/${storyId}`, {
         method: 'PUT',
-        headers: {
+        headers: { 
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         },
-        body: JSON.stringify(chapterData)
+        body: JSON.stringify(updatedStory)
       });
 
       if (response.ok) {
-        alert('✅ ¡Capítulo guardado correctamente! 📚');
+        alert('✅ ¡Capítulo creado correctamente! 📚');
+        navigate(`/myworks/${storyId}`);
       } else {
         throw new Error('Error en la respuesta del servidor');
       }
       
     } catch (error) {
-      console.error('❌ Error al guardar:', error);
-      alert('❌ Error al guardar el capítulo. Inténtalo de nuevo.');
+      console.error('❌ Error al crear capítulo:', error);
+      alert('❌ Error al crear el capítulo. Inténtalo de nuevo.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Volver a la historia
-  const handleBack = () => {
+  const handleCancel = () => {
     navigate(`/myworks/${storyId}`);
   };
 
-  // Función para insertar texto rápido
   const insertQuickText = (text) => {
     if (editorRef.current) {
       editorRef.current.insertContent(text);
     }
   };
 
-  if (authLoading || loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Cargando capítulo...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50">
-      {/* Header estilo Wattpad */}
+      {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-5xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div>
               <button
-                onClick={handleBack}
+                onClick={handleCancel}
                 className="text-purple-600 hover:text-purple-800 mb-2 flex items-center text-sm"
               >
-                ← Volver a "{storyTitle}"
+                ← Volver a la Historia
               </button>
               <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                ✍️ Editando Capítulo
+                ✍️ Nuevo Capítulo
               </h1>
               <p className="text-sm text-gray-600 mt-1">
-                Historia: {storyTitle}
+                Agrega un nuevo capítulo a tu historia
               </p>
             </div>
             
@@ -217,10 +158,17 @@ export default function ChapterEditor() {
                 📊 {wordCount} palabras
               </div>
               <button
-                onClick={handleSave}
-                className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-2 rounded-full hover:shadow-lg transition-all duration-200 font-medium"
+                onClick={handleCancel}
+                className="text-gray-600 hover:text-gray-800 px-4 py-2 rounded-lg transition-colors"
               >
-                💾 Guardar Cambios
+                Cancelar
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={loading}
+                className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-2 rounded-full hover:shadow-lg transition-all duration-200 font-medium disabled:opacity-50"
+              >
+                {loading ? '⏳ Guardando...' : '💾 Publicar Cambios'}
               </button>
             </div>
           </div>
@@ -304,8 +252,8 @@ export default function ChapterEditor() {
             <div className="flex items-center space-x-2">
               <span className="text-2xl">📚</span>
               <div>
-                <div className="font-semibold text-gray-800">Capítulo</div>
-                <div className="text-green-600 font-bold text-xl">#{chapterId}</div>
+                <div className="font-semibold text-gray-800">Estado</div>
+                <div className="text-green-600 font-bold text-xl">Nuevo</div>
               </div>
             </div>
           </div>
