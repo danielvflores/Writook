@@ -39,7 +39,6 @@ public class StoryController {
         return storyService.getStoryById(id, authHeader);
     }
 
-    // Endpoint específico para verificar propiedad de historia (para /myworks)
     @GetMapping("/{id}/ownership")
     public ResponseEntity<?> getStoryByIdWithOwnershipCheck(@PathVariable("id") Long id, @RequestHeader("Authorization") String authHeader) {
         try {

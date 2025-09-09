@@ -2,8 +2,8 @@ package com.danielvflores.writook.dto;
 
 public class StoryDraftDTO {
     private String title;
-    private String content; // Para contenido HTML del editor
-    private int wordCount;  // Metadata del editor
+    private String content;
+    private int wordCount;
     
     public StoryDraftDTO() {}
     
@@ -12,8 +12,8 @@ public class StoryDraftDTO {
         this.content = content;
         this.wordCount = wordCount;
     }
-    
-    // Getters y setters
+
+    // GETTERS AND SETTERS FOR ALL FIELDS THIS CLASS IS MUTABLE AND FLEXIBLE.
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
     
