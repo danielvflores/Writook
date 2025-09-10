@@ -3,7 +3,6 @@ import InitialPage from './pages/InitialPage';
 import RegisterPage from './pages/RegisterPage';
 import LoginPage from './pages/LoginPage';
 import HomePage from './pages/HomePage';
-import EditorTest from './pages/EditorTest';
 import CreateStory from './pages/CreateStory';
 import MyWorks from './pages/MyWorks';
 import MyStoryDetails from './pages/MyStoryDetails';
@@ -66,9 +65,6 @@ function App() {
         } />
         <Route path="/myworks/:storyId/edit/:chapterId" element={
           user ? <ChapterEditor /> : <Navigate to="/" />
-        } />
-        <Route path="/editor-test" element={
-          user ? <EditorTest /> : <Navigate to="/" />
         } />
       </Routes>
     </Router>

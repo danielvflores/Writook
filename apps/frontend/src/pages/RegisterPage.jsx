@@ -1,17 +1,13 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import RegisterForm from "../components/RegisterForm";
+import Notification from "../components/Notification";
+import { useNotification } from "../hooks/useNotification";
 
 function RegisterPage() {
   const navigate = useNavigate();
-  const [notification, setNotification] = useState(null);
+  const { notification, showNotification, hideNotification } = useNotification();
   const [isLoading, setIsLoading] = useState(false);
-
-  // Show notification system
-  const showNotification = (message, type = 'info') => {
-    setNotification({ message, type });
-    setTimeout(() => setNotification(null), 4000);
-  };
 
   const handleRegister = async ({ username, email, password }) => {
     try {
@@ -48,30 +44,12 @@ function RegisterPage() {
     }
   };
 
-  // Notification styles
-  const notificationStyles = {
-    success: 'bg-green-500 text-white',
-    error: 'bg-red-500 text-white',
-    warning: 'bg-yellow-500 text-black',
-    info: 'bg-blue-500 text-white'
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-blue-900 to-indigo-800 flex items-center justify-center p-4">
-      {/* Notification Banner */}
-      {notification && (
-        <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg ${notificationStyles[notification.type]}`}>
-          <div className="flex items-center">
-            <span className="mr-2">
-              {notification.type === 'success' && '✅'}
-              {notification.type === 'error' && '❌'}
-              {notification.type === 'warning' && '⚠️'}
-              {notification.type === 'info' && 'ℹ️'}
-            </span>
-            <p className="text-sm font-medium">{notification.message}</p>
-          </div>
-        </div>
-      )}
+      <Notification
+        notification={notification}
+        onClose={hideNotification}
+      />
 
       <div className="bg-white bg-opacity-10 backdrop-blur-lg rounded-2xl p-8 shadow-2xl w-full max-w-md">
         <div className="text-center mb-8">

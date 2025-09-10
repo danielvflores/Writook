@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import useAuth from '../config/AuthContext.jsx';
+import Notification from '../components/Notification';
+import { useNotification } from '../hooks/useNotification';
 
 export default function ReadChapter() {
   const { storyId, chapterNumber } = useParams();
@@ -11,17 +13,11 @@ export default function ReadChapter() {
   const [chapter, setChapter] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isOwner, setIsOwner] = useState(false);
-  const [notification, setNotification] = useState(null);
+  const { notification, showNotification, hideNotification } = useNotification();
 
   useEffect(() => {
     loadChapterData();
   }, [storyId, chapterNumber, user]);
-
-  // Show notification system
-  const showNotification = (message, type = 'info') => {
-    setNotification({ message, type });
-    setTimeout(() => setNotification(null), 4000);
-  };
 
   const loadChapterData = async () => {
     try {
@@ -66,14 +62,6 @@ export default function ReadChapter() {
     navigate(`/myworks/${storyId}/edit/${chapterNumber}`);
   };
 
-  // Notification styles
-  const notificationStyles = {
-    success: 'bg-green-50 border-green-400 text-green-800',
-    error: 'bg-red-50 border-red-400 text-red-800',
-    warning: 'bg-yellow-50 border-yellow-400 text-yellow-800',
-    info: 'bg-blue-50 border-blue-400 text-blue-800'
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -103,20 +91,10 @@ export default function ReadChapter() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Notification Banner */}
-      {notification && (
-        <div className={`fixed top-4 right-4 z-50 p-4 border-l-4 rounded-lg shadow-lg ${notificationStyles[notification.type]}`}>
-          <div className="flex items-center">
-            <span className="mr-2">
-              {notification.type === 'success' && '✅'}
-              {notification.type === 'error' && '❌'}
-              {notification.type === 'warning' && '⚠️'}
-              {notification.type === 'info' && 'ℹ️'}
-            </span>
-            <p className="text-sm font-medium">{notification.message}</p>
-          </div>
-        </div>
-      )}
+      <Notification
+        notification={notification}
+        onClose={hideNotification}
+      />
 
       {/* Header */}
       <div className="bg-white shadow-sm border-b sticky top-0 z-10">

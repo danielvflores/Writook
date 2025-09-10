@@ -1,6 +1,8 @@
 import { useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Editor } from '@tinymce/tinymce-react';
+import Notification from '../components/Notification';
+import { useNotification } from '../hooks/useNotification';
 
 export default function CreateChapter() {
   const { storyId } = useParams();
@@ -10,13 +12,8 @@ export default function CreateChapter() {
   const [title, setTitle] = useState('');
   const [wordCount, setWordCount] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [notification, setNotification] = useState(null);
+  const { notification, showNotification, hideNotification } = useNotification();
   const editorRef = useRef(null);
-
-  const showNotification = (message, type = 'info') => {
-    setNotification({ message, type });
-    setTimeout(() => setNotification(null), 4000);
-  };
 
   // TinyMCE Properties
   const editorConfig = {
@@ -136,34 +133,12 @@ export default function CreateChapter() {
     }
   };
 
-  const NotificationBanner = () => {
-    if (!notification) return null;
-
-    const styles = {
-      success: 'bg-green-100 border-green-400 text-green-700',
-      error: 'bg-red-100 border-red-400 text-red-700',
-      warning: 'bg-yellow-100 border-yellow-400 text-yellow-700',
-      info: 'bg-blue-100 border-blue-400 text-blue-700'
-    };
-
-    return (
-      <div className={`fixed top-4 right-4 z-50 p-4 border-l-4 rounded-lg shadow-lg ${styles[notification.type]}`}>
-        <div className="flex items-center">
-          <span className="mr-3">
-            {notification.type === 'success' && '✅'}
-            {notification.type === 'error' && '❌'}
-            {notification.type === 'warning' && '⚠️'}
-            {notification.type === 'info' && 'ℹ️'}
-          </span>
-          <p className="text-sm font-medium">{notification.message}</p>
-        </div>
-      </div>
-    );
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <NotificationBanner />
+      <Notification
+        notification={notification}
+        onClose={hideNotification}
+      />
       
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
