@@ -40,6 +40,7 @@ const useAuth = () => {
   const login = (token, userData) => {
     localStorage.setItem('authToken', token);
     setUser(userData);
+    setLoading(false); // Ensure loading is false after login
   };
 
   const logout = () => {

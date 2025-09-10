@@ -13,11 +13,16 @@ export default function CreateStory() {
     tags: []
   });
   const [loading, setLoading] = useState(false);
+  const [notification, setNotification] = useState(null);
 
-  // Géneros disponibles (puedes expandir esta lista)
+  const showNotification = (message, type = 'info') => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), 4000);
+  };
+
   const availableGenres = [
     'Fantasía', 'Romance', 'Aventura', 'Misterio', 'Ciencia Ficción', 
-    'Horror', 'Drama', 'Comedia', 'Slice of Life', 'Histórico'
+    'Horror', 'Drama', 'Comedia', 'Slice of Life', 'Histórico', "Fanfics"
   ];
 
   const handleInputChange = (e) => {
@@ -49,29 +54,26 @@ export default function CreateStory() {
     e.preventDefault();
     
     if (!formData.title.trim()) {
-      alert('❌ Por favor, ingresa un título para tu historia');
+      showNotification('Please enter a title for your story', 'warning');
       return;
     }
     
     if (!formData.synopsis.trim()) {
-      alert('❌ Por favor, escribe una sinopsis');
+      showNotification('Please write a synopsis', 'warning');
       return;
     }
 
     if (formData.genres.length === 0) {
-      alert('❌ Por favor, selecciona al menos un género');
+      showNotification('Please select at least one genre', 'warning');
       return;
     }
 
     setLoading(true);
     try {
-      // Debug: verificar token
       const token = localStorage.getItem('authToken');
-      console.log('🔑 Token encontrado:', token ? 'Sí' : 'No');
-      console.log('👤 Usuario actual:', user);
       
       if (!token) {
-        alert('❌ No estás autenticado. Por favor inicia sesión.');
+        showNotification('You are not authenticated. Please log in.', 'error');
         navigate('/login');
         return;
       }
@@ -79,22 +81,21 @@ export default function CreateStory() {
       const storyData = {
         title: formData.title.trim(),
         synopsis: formData.synopsis.trim(),
+        genres: formData.genres,
+        tags: formData.tags,
         author: {
           username: user.username,
           displayName: user.displayName || user.username,
-          bio: user.bio || "Escritor en Writook",
+          bio: user.bio || "Writer on Writook",
           profilePictureUrl: user.profilePictureUrl || null
         },
-        rating: 0.0,
-        genres: formData.genres,
-        tags: formData.tags.length > 0 ? formData.tags : ["Nueva"],
-        chapters: [], // Sin capítulos inicialmente
-        id: null
+        chapters: [],
+        rating: 0.0
       };
 
       const response = await fetch('http://localhost:8080/api/v1/stories', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         },
@@ -103,79 +104,93 @@ export default function CreateStory() {
 
       if (response.ok) {
         const createdStory = await response.json();
-        alert('✅ ¡Historia creada exitosamente! 📚');
+        showNotification('Story created successfully! 📚', 'success');
         navigate(`/myworks/${createdStory.id}`);
       } else {
-        throw new Error('Error al crear la historia');
+        throw new Error('Error creating story');
       }
       
     } catch (error) {
-      console.error('❌ Error:', error);
-      alert('❌ Error al crear la historia. Inténtalo de nuevo.');
+      showNotification('Error creating story. Please try again.', 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-            ✍️ Crear Nueva Historia
-          </h1>
-          <p className="text-sm text-gray-600 mt-1">
-            Comparte tu imaginación con el mundo
-          </p>
+  const NotificationBanner = () => {
+    if (!notification) return null;
+
+    const styles = {
+      success: 'bg-green-100 border-green-400 text-green-700',
+      error: 'bg-red-100 border-red-400 text-red-700',
+      warning: 'bg-yellow-100 border-yellow-400 text-yellow-700',
+      info: 'bg-blue-100 border-blue-400 text-blue-700'
+    };
+
+    return (
+      <div className={`fixed top-4 right-4 z-50 p-4 border-l-4 rounded-lg shadow-lg ${styles[notification.type]}`}>
+        <div className="flex items-center">
+          <span className="mr-3">
+            {notification.type === 'success' && '✅'}
+            {notification.type === 'error' && '❌'}
+            {notification.type === 'warning' && '⚠️'}
+            {notification.type === 'info' && 'ℹ️'}
+          </span>
+          <p className="text-sm font-medium">{notification.message}</p>
         </div>
       </div>
+    );
+  };
 
-      {/* Form */}
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-lg overflow-hidden">
-          
-          {/* Título */}
-          <div className="p-6 border-b border-gray-100">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Título de la Historia *
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      <NotificationBanner />
+      
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">Create New Story</h1>
+          <p className="text-gray-600">Share your imagination with the world</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-lg p-8">
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Story Title *
             </label>
             <input
               type="text"
               name="title"
               value={formData.title}
               onChange={handleInputChange}
-              placeholder="Ej: El Reino de los Dragones Perdidos"
-              className="w-full text-xl font-semibold text-gray-800 border-2 border-gray-200 rounded-lg px-4 py-3 focus:border-purple-500 focus:outline-none transition-colors"
+              placeholder="e.g. The Lost Kingdom of Dragons"
+              className="w-full text-xl font-semibold border-2 border-gray-200 rounded-lg px-4 py-3 focus:border-indigo-500 outline-none"
               maxLength="100"
             />
             <div className="text-xs text-gray-500 mt-1">
-              {formData.title.length}/100 caracteres
+              {formData.title.length}/100 characters
             </div>
           </div>
 
-          {/* Sinopsis */}
-          <div className="p-6 border-b border-gray-100">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Sinopsis *
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Synopsis *
             </label>
             <textarea
               name="synopsis"
               value={formData.synopsis}
               onChange={handleInputChange}
-              placeholder="Describe de qué trata tu historia. ¿Qué aventuras esperan a tus lectores?"
-              className="w-full h-32 text-gray-800 border-2 border-gray-200 rounded-lg px-4 py-3 focus:border-purple-500 focus:outline-none transition-colors resize-none"
+              placeholder="Describe what your story is about. What adventures await your readers?"
+              className="w-full h-32 border-2 border-gray-200 rounded-lg px-4 py-3 focus:border-indigo-500 outline-none resize-none"
               maxLength="500"
             />
             <div className="text-xs text-gray-500 mt-1">
-              {formData.synopsis.length}/500 caracteres
+              {formData.synopsis.length}/500 characters
             </div>
           </div>
 
-          {/* Géneros */}
-          <div className="p-6 border-b border-gray-100">
-            <label className="block text-sm font-semibold text-gray-700 mb-3">
-              Géneros * (selecciona hasta 3)
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-3">
+              Genres * (select up to 3)
             </label>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
               {availableGenres.map(genre => (
@@ -186,7 +201,7 @@ export default function CreateStory() {
                   disabled={!formData.genres.includes(genre) && formData.genres.length >= 3}
                   className={`p-3 rounded-lg text-sm font-medium transition-all ${
                     formData.genres.includes(genre)
-                      ? 'bg-purple-600 text-white shadow-lg'
+                      ? 'bg-indigo-600 text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   } ${(!formData.genres.includes(genre) && formData.genres.length >= 3) ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
@@ -195,45 +210,40 @@ export default function CreateStory() {
               ))}
             </div>
             <div className="text-xs text-gray-500 mt-2">
-              Seleccionados: {formData.genres.length}/3
+              Selected: {formData.genres.length}/3
             </div>
           </div>
 
-          {/* Tags */}
-          <div className="p-6 border-b border-gray-100">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Tags (opcional)
+          <div className="mb-8">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Tags (optional)
             </label>
             <input
               type="text"
               onChange={handleTagsChange}
-              placeholder="Ej: magia, dragones, amistad (separados por comas)"
-              className="w-full text-gray-800 border-2 border-gray-200 rounded-lg px-4 py-3 focus:border-purple-500 focus:outline-none transition-colors"
+              placeholder="adventure, magic, friendship (separate with commas)"
+              className="w-full border-2 border-gray-200 rounded-lg px-4 py-3 focus:border-indigo-500 outline-none"
             />
             <div className="text-xs text-gray-500 mt-1">
-              Separa los tags con comas. Ayudan a los lectores a encontrar tu historia.
+              Separate tags with commas
             </div>
           </div>
 
-          {/* Submit */}
-          <div className="p-6">
-            <div className="flex items-center justify-between">
-              <button
-                type="button"
-                onClick={() => navigate('/home')}
-                className="text-gray-600 hover:text-gray-800 font-medium"
-              >
-                Cancelar
-              </button>
-              
-              <button
-                type="submit"
-                disabled={loading}
-                className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-3 rounded-full hover:shadow-lg transition-all duration-200 font-medium disabled:opacity-50"
-              >
-                {loading ? '⏳ Creando...' : '✨ Crear Historia'}
-              </button>
-            </div>
+          <div className="flex justify-end space-x-4">
+            <button
+              type="button"
+              onClick={() => navigate('/myworks')}
+              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium disabled:opacity-50"
+            >
+              {loading ? '⏳ Creating...' : '📚 Create Story'}
+            </button>
           </div>
         </form>
       </div>

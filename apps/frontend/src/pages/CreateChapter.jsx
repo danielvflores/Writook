@@ -10,9 +10,15 @@ export default function CreateChapter() {
   const [title, setTitle] = useState('');
   const [wordCount, setWordCount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [notification, setNotification] = useState(null);
   const editorRef = useRef(null);
 
-  // Configuración de TinyMCE
+  const showNotification = (message, type = 'info') => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), 4000);
+  };
+
+  // TinyMCE Properties
   const editorConfig = {
     height: 500,
     menubar: false,
@@ -62,18 +68,18 @@ export default function CreateChapter() {
 
   const handleSave = async () => {
     if (!title.trim()) {
-      alert('❌ Por favor, ingresa un título para el capítulo');
+      showNotification('Please enter a chapter title', 'warning');
       return;
     }
     
     if (!content.trim() || content === '<p><br></p>') {
-      alert('❌ Por favor, escribe algo en el capítulo');
+      showNotification('Please write some content for the chapter', 'warning');
       return;
     }
 
     setLoading(true);
     try {
-      // Primero, obtener la historia para saber cuántos capítulos tiene
+      // GET Story to add Chapter
       const storyResponse = await fetch(`http://localhost:8080/api/v1/stories/${storyId}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`
@@ -91,7 +97,6 @@ export default function CreateChapter() {
         number: nextChapterNumber
       };
 
-      // Crear el capítulo agregándolo a la historia
       const updatedChapters = [...storyData.chapters, chapterData];
       const updatedStory = {
         ...storyData,
@@ -108,15 +113,14 @@ export default function CreateChapter() {
       });
 
       if (response.ok) {
-        alert('✅ ¡Capítulo creado correctamente! 📚');
+        showNotification('Chapter created successfully! 📚', 'success');
         navigate(`/myworks/${storyId}`);
       } else {
-        throw new Error('Error en la respuesta del servidor');
+        throw new Error('Server response error');
       }
       
     } catch (error) {
-      console.error('❌ Error al crear capítulo:', error);
-      alert('❌ Error al crear el capítulo. Inténtalo de nuevo.');
+      showNotification('Error creating chapter. Please try again.', 'error');
     } finally {
       setLoading(false);
     }
@@ -132,90 +136,59 @@ export default function CreateChapter() {
     }
   };
 
+  const NotificationBanner = () => {
+    if (!notification) return null;
+
+    const styles = {
+      success: 'bg-green-100 border-green-400 text-green-700',
+      error: 'bg-red-100 border-red-400 text-red-700',
+      warning: 'bg-yellow-100 border-yellow-400 text-yellow-700',
+      info: 'bg-blue-100 border-blue-400 text-blue-700'
+    };
+
+    return (
+      <div className={`fixed top-4 right-4 z-50 p-4 border-l-4 rounded-lg shadow-lg ${styles[notification.type]}`}>
+        <div className="flex items-center">
+          <span className="mr-3">
+            {notification.type === 'success' && '✅'}
+            {notification.type === 'error' && '❌'}
+            {notification.type === 'warning' && '⚠️'}
+            {notification.type === 'info' && 'ℹ️'}
+          </span>
+          <p className="text-sm font-medium">{notification.message}</p>
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-5xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <button
-                onClick={handleCancel}
-                className="text-purple-600 hover:text-purple-800 mb-2 flex items-center text-sm"
-              >
-                ← Volver a la Historia
-              </button>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                ✍️ Nuevo Capítulo
-              </h1>
-              <p className="text-sm text-gray-600 mt-1">
-                Agrega un nuevo capítulo a tu historia
-              </p>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <div className="text-sm text-gray-500">
-                📊 {wordCount} palabras
-              </div>
-              <button
-                onClick={handleCancel}
-                className="text-gray-600 hover:text-gray-800 px-4 py-2 rounded-lg transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={loading}
-                className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-2 rounded-full hover:shadow-lg transition-all duration-200 font-medium disabled:opacity-50"
-              >
-                {loading ? '⏳ Guardando...' : '💾 Publicar Cambios'}
-              </button>
-            </div>
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      <NotificationBanner />
+      
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-8">
+          <button
+            onClick={handleCancel}
+            className="flex items-center text-indigo-600 hover:text-indigo-800 mb-4"
+          >
+            ← Back to Story
+          </button>
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">Create New Chapter</h1>
+          <p className="text-gray-600">Add a new chapter to your story</p>
         </div>
-      </div>
 
-      {/* Quick Actions */}
-      <div className="max-w-5xl mx-auto px-4 py-4">
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => insertQuickText('<p><strong>---</strong></p><p>')}
-            className="text-xs bg-purple-100 text-purple-700 px-3 py-1 rounded-full hover:bg-purple-200 transition-colors"
-          >
-            📚 Separador de Escena
-          </button>
-          <button
-            onClick={() => insertQuickText('<p>***</p><p>')}
-            className="text-xs bg-pink-100 text-pink-700 px-3 py-1 rounded-full hover:bg-pink-200 transition-colors"
-          >
-            ✨ Separador
-          </button>
-          <button
-            onClick={() => insertQuickText('<p><em>Nota del autor: </em></p><p>')}
-            className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full hover:bg-blue-200 transition-colors"
-          >
-            📝 Nota del Autor
-          </button>
-        </div>
-      </div>
-
-      {/* Editor Container */}
-      <div className="max-w-5xl mx-auto px-4 pb-6">
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-          
-          {/* Título del capítulo */}
-          <div className="p-6 border-b border-gray-100">
+        <div className="bg-white rounded-xl shadow-lg p-8">
+          <div className="mb-6">
             <input
               type="text"
-              placeholder="Título del capítulo..."
+              placeholder="Chapter title..."
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full text-2xl font-bold text-gray-800 placeholder-gray-400 border-none outline-none resize-none bg-transparent"
+              className="w-full text-xl font-semibold border-b-2 border-gray-200 focus:border-indigo-500 outline-none pb-2"
             />
           </div>
 
-          {/* Editor principal */}
-          <div className="p-6">
+          <div className="mb-6">
             <Editor
               apiKey='qagffr3pkuv17a8on1afax661irst1hbr4e6tbv888sz91jc'
               onInit={(evt, editor) => editorRef.current = editor}
@@ -224,47 +197,25 @@ export default function CreateChapter() {
               init={editorConfig}
             />
           </div>
-        </div>
 
-        {/* Stats Panel */}
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white p-4 rounded-lg shadow-md">
-            <div className="flex items-center space-x-2">
-              <span className="text-2xl">📝</span>
-              <div>
-                <div className="font-semibold text-gray-800">Palabras</div>
-                <div className="text-purple-600 font-bold text-xl">{wordCount}</div>
-              </div>
+          <div className="flex justify-between items-center">
+            <div className="text-sm text-gray-500">
+              Words: {wordCount} | Reading time: ~{Math.ceil(wordCount / 200)} min
             </div>
-          </div>
-          
-          <div className="bg-white p-4 rounded-lg shadow-md">
-            <div className="flex items-center space-x-2">
-              <span className="text-2xl">⏱️</span>
-              <div>
-                <div className="font-semibold text-gray-800">Lectura</div>
-                <div className="text-pink-600 font-bold text-xl">~{Math.ceil(wordCount / 200)} min</div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white p-4 rounded-lg shadow-md">
-            <div className="flex items-center space-x-2">
-              <span className="text-2xl">📚</span>
-              <div>
-                <div className="font-semibold text-gray-800">Estado</div>
-                <div className="text-green-600 font-bold text-xl">Nuevo</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white p-4 rounded-lg shadow-md">
-            <div className="flex items-center space-x-2">
-              <span className="text-2xl">📄</span>
-              <div>
-                <div className="font-semibold text-gray-800">Páginas</div>
-                <div className="text-blue-600 font-bold text-xl">~{Math.ceil(wordCount / 250)}</div>
-              </div>
+            <div className="flex space-x-3">
+              <button
+                onClick={handleCancel}
+                className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={loading}
+                className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium disabled:opacity-50"
+              >
+                {loading ? '⏳ Creating...' : '💾 Create Chapter'}
+              </button>
             </div>
           </div>
         </div>

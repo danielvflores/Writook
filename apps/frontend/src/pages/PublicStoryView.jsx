@@ -7,10 +7,17 @@ export default function PublicStoryView() {
   
   const [story, setStory] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [notification, setNotification] = useState(null);
 
   useEffect(() => {
     loadStory();
   }, [storyId]);
+
+  // Show notification system
+  const showNotification = (message, type = 'info') => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), 4000);
+  };
 
   const loadStory = async () => {
     try {
@@ -21,11 +28,10 @@ export default function PublicStoryView() {
         const storyData = await response.json();
         setStory(storyData);
       } else {
-        throw new Error('Historia no encontrada');
+        throw new Error('Story not found');
       }
     } catch (error) {
-      console.error('❌ Error al cargar historia:', error);
-      alert('❌ Error al cargar la historia');
+      showNotification('Error loading story', 'error');
       navigate('/home');
     } finally {
       setLoading(false);
@@ -39,27 +45,35 @@ export default function PublicStoryView() {
   const handleShareStory = () => {
     const publicUrl = `${window.location.origin}/story/${storyId}`;
     navigator.clipboard.writeText(publicUrl).then(() => {
-      alert('✅ URL copiado al portapapeles!\n' + publicUrl);
+      showNotification('Story URL copied to clipboard!', 'success');
     }).catch(() => {
-      prompt('Copia esta URL para compartir la historia:', publicUrl);
+      showNotification('Could not copy to clipboard', 'warning');
     });
   };
 
   const handleShareChapter = (chapterNumber) => {
     const publicUrl = `${window.location.origin}/read/${storyId}/${chapterNumber}`;
     navigator.clipboard.writeText(publicUrl).then(() => {
-      alert('✅ URL del capítulo copiado!\n' + publicUrl);
+      showNotification('Chapter URL copied to clipboard!', 'success');
     }).catch(() => {
-      prompt('Copia esta URL para compartir el capítulo:', publicUrl);
+      showNotification('Could not copy to clipboard', 'warning');
     });
+  };
+
+  // Notification styles
+  const notificationStyles = {
+    success: 'bg-green-50 border-green-400 text-green-800',
+    error: 'bg-red-50 border-red-400 text-red-800',
+    warning: 'bg-yellow-50 border-yellow-400 text-yellow-800',
+    info: 'bg-blue-50 border-blue-400 text-blue-800'
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Cargando historia...</p>
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-indigo-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading story...</p>
         </div>
       </div>
     );
@@ -67,14 +81,14 @@ export default function PublicStoryView() {
 
   if (!story) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Historia no encontrada</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">Story not found</h2>
           <button 
             onClick={() => navigate('/home')}
-            className="text-purple-600 hover:text-purple-800"
+            className="text-indigo-600 hover:text-indigo-800 font-medium"
           >
-            Volver al inicio
+            Return to home
           </button>
         </div>
       </div>
@@ -82,23 +96,38 @@ export default function PublicStoryView() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50">
+    <div className="min-h-screen bg-gray-50">
+      {/* Notification Banner */}
+      {notification && (
+        <div className={`fixed top-4 right-4 z-50 p-4 border-l-4 rounded-lg shadow-lg ${notificationStyles[notification.type]}`}>
+          <div className="flex items-center">
+            <span className="mr-2">
+              {notification.type === 'success' && '✅'}
+              {notification.type === 'error' && '❌'}
+              {notification.type === 'warning' && '⚠️'}
+              {notification.type === 'info' && 'ℹ️'}
+            </span>
+            <p className="text-sm font-medium">{notification.message}</p>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-6xl mx-auto px-4 py-4">
           <button
             onClick={() => navigate('/home')}
-            className="text-purple-600 hover:text-purple-800 mb-2 flex items-center text-sm"
+            className="text-indigo-600 hover:text-indigo-800 mb-2 flex items-center text-sm font-medium transition-colors"
           >
-            ← Volver al inicio
+            ← Back to home
           </button>
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-blue-600 bg-clip-text text-transparent">
                 📚 {story.title}
               </h1>
               <p className="text-sm text-gray-600 mt-1">
-                Por {story.author.displayName}
+                By {story.author?.displayName || story.author?.username || story.author}
               </p>
             </div>
             <div className="flex items-center space-x-3">
@@ -107,7 +136,7 @@ export default function PublicStoryView() {
                 className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors flex items-center space-x-2"
               >
                 <span>🔗</span>
-                <span>Compartir Historia</span>
+                <span>Share Story</span>
               </button>
             </div>
           </div>
@@ -122,10 +151,10 @@ export default function PublicStoryView() {
           <div className="lg:col-span-1">
             <div className="bg-white rounded-xl shadow-lg p-6">
               {/* Story Cover */}
-              <div className="aspect-[3/4] bg-gradient-to-br from-purple-200 to-pink-200 rounded-lg mb-4 flex items-center justify-center">
+              <div className="aspect-[3/4] bg-gradient-to-br from-indigo-100 to-blue-100 rounded-lg mb-4 flex items-center justify-center">
                 <div className="text-center text-gray-600">
                   <div className="text-4xl mb-2">📖</div>
-                  <div className="text-sm">Vista previa</div>
+                  <div className="text-sm">Preview</div>
                 </div>
               </div>
               
@@ -139,21 +168,21 @@ export default function PublicStoryView() {
                   </div>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Capítulos:</span>
+                  <span className="text-gray-600">Chapters:</span>
                   <span className="font-medium">{story.chapters.length}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Estado:</span>
-                  <span className="text-green-600 font-medium">En Progreso</span>
+                  <span className="text-gray-600">Status:</span>
+                  <span className="text-green-600 font-medium">In Progress</span>
                 </div>
               </div>
 
               {/* Genres */}
               <div className="mt-4">
-                <h4 className="text-sm font-medium text-gray-700 mb-2">Géneros</h4>
+                <h4 className="text-sm font-medium text-gray-700 mb-2">Genres</h4>
                 <div className="flex flex-wrap gap-1">
                   {story.genres.map((genre, index) => (
-                    <span key={index} className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full">
+                    <span key={index} className="px-2 py-1 bg-indigo-100 text-indigo-700 text-xs rounded-full">
                       {genre}
                     </span>
                   ))}
@@ -180,7 +209,7 @@ export default function PublicStoryView() {
               
               {/* Synopsis */}
               <div className="mb-8">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">Sinopsis</h3>
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Synopsis</h3>
                 <p className="text-gray-600 leading-relaxed">
                   {story.synopsis}
                 </p>
@@ -189,7 +218,7 @@ export default function PublicStoryView() {
               {/* Chapters */}
               <div>
                 <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-semibold text-gray-800">Capítulos</h3>
+                  <h3 className="text-lg font-semibold text-gray-800">Chapters</h3>
                 </div>
 
                 {/* Chapters List */}
@@ -197,8 +226,8 @@ export default function PublicStoryView() {
                   {story.chapters.length === 0 ? (
                     <div className="text-center py-12 text-gray-500">
                       <div className="text-4xl mb-4">📝</div>
-                      <p className="text-lg font-medium mb-2">Esta historia aún no tiene capítulos</p>
-                      <p className="text-sm">El autor aún no ha publicado ningún capítulo.</p>
+                      <p className="text-lg font-medium mb-2">This story doesn't have chapters yet</p>
+                      <p className="text-sm">The author hasn't published any chapters yet.</p>
                     </div>
                   ) : (
                     story.chapters.map((chapter, index) => (
@@ -210,13 +239,13 @@ export default function PublicStoryView() {
                             </div>
                             <div>
                               <h4 
-                                className="font-medium text-gray-800 hover:text-purple-600 cursor-pointer"
+                                className="font-medium text-gray-800 hover:text-indigo-600 cursor-pointer"
                                 onClick={() => handleReadChapter(chapter.number)}
                               >
                                 {chapter.title}
                               </h4>
                               <div className="flex items-center space-x-4 text-sm text-gray-500 mt-1">
-                                <span>Publicado - {new Date().toLocaleDateString('es', { 
+                                <span>Published - {new Date().toLocaleDateString('en', { 
                                   year: 'numeric', 
                                   month: 'short', 
                                   day: 'numeric' 
@@ -233,7 +262,7 @@ export default function PublicStoryView() {
                             <button
                               onClick={() => handleShareChapter(chapter.number)}
                               className="text-blue-400 hover:text-blue-600 p-2"
-                              title="Compartir capítulo"
+                              title="Share chapter"
                             >
                               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                                 <path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z"/>
@@ -242,7 +271,7 @@ export default function PublicStoryView() {
                             <button
                               onClick={() => handleReadChapter(chapter.number)}
                               className="text-green-400 hover:text-green-600 p-2"
-                              title="Leer capítulo"
+                              title="Read chapter"
                             >
                               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                                 <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
