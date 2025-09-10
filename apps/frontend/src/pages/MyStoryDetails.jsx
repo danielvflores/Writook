@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import useAuth from '../config/AuthContext.js';
+import useAuth from '../config/AuthContext.jsx';
 
 export default function MyStoryDetails() {
   const { storyId } = useParams();
@@ -10,6 +10,7 @@ export default function MyStoryDetails() {
   const [story, setStory] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notification, setNotification] = useState(null);
+  const [isOwner, setIsOwner] = useState(false);
 
   const showNotification = (message, type = 'info') => {
     setNotification({ message, type });
@@ -23,29 +24,53 @@ export default function MyStoryDetails() {
   const loadStory = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:8080/api/v1/stories/${storyId}/ownership`, {
+      
+      // First, try the ownership endpoint
+      const token = localStorage.getItem('authToken');
+      
+      const ownershipResponse = await fetch(`http://localhost:8080/api/v1/stories/${storyId}/ownership`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          'Authorization': `Bearer ${token}`
         }
       });
       
-      if (response.ok) {
-        const storyData = await response.json();
+      if (ownershipResponse.ok) {
+        const storyData = await ownershipResponse.json();
         setStory(storyData);
-      } else {
-        if (response.status === 403) {
-          navigate(`/story/${storyId}`);
-          return;
-        } else if (response.status === 404) {
-          showNotification('Story not found', 'error');
-          navigate('/home');
-        } else if (response.status === 401) {
-          showNotification('Your session has expired. Please log in again.', 'error');
-          navigate('/home');
+        setIsOwner(true);
+        return;
+      }
+      
+      // If ownership fails, try the public endpoint and check ownership manually
+      if (ownershipResponse.status === 403) {
+        const publicResponse = await fetch(`http://localhost:8080/api/v1/stories/${storyId}`);
+        
+        if (publicResponse.ok) {
+          const storyData = await publicResponse.json();
+          setStory(storyData);
+          
+          // Check ownership manually using the current user
+          if (user && storyData.author && 
+              (storyData.author.username === user.username || 
+               storyData.author.username === user.sub)) {
+            setIsOwner(true);
+          } else {
+            // Redirect to public view since user doesn't own this story
+            navigate(`/story/${storyId}`);
+            return;
+          }
         } else {
-          showNotification('Error loading story', 'error');
-          navigate('/home');
+          throw new Error('Could not load story');
         }
+      } else if (ownershipResponse.status === 404) {
+        showNotification('Story not found', 'error');
+        navigate('/home');
+      } else if (ownershipResponse.status === 401) {
+        showNotification('Your session has expired. Please log in again.', 'error');
+        navigate('/home');
+      } else {
+        showNotification('Error loading story', 'error');
+        navigate('/home');
       }
     } catch (error) {
       showNotification('Connection error loading story', 'error');

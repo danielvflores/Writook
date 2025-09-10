@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import useAuth from '../config/AuthContext.js';
+import useAuth from '../config/AuthContext.jsx';
 
 export default function CreateStory() {
   const navigate = useNavigate();

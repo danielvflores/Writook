@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import useAuth from '../config/AuthContext';
 
 export default function PublicStoryView() {
   const { storyId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   
   const [story, setStory] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notification, setNotification] = useState(null);
+  const [isOwner, setIsOwner] = useState(false);
 
   useEffect(() => {
     loadStory();
@@ -27,6 +30,11 @@ export default function PublicStoryView() {
       if (response.ok) {
         const storyData = await response.json();
         setStory(storyData);
+        
+        // Check ownership if user is logged in
+        if (user) {
+          await checkOwnership(storyData);
+        }
       } else {
         throw new Error('Story not found');
       }
@@ -35,6 +43,42 @@ export default function PublicStoryView() {
       navigate('/home');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const checkOwnership = async (storyData) => {
+    try {
+      // First check if the author username matches current user
+      const authorUsername = storyData.author?.username;
+      if (authorUsername) {
+        // Extract username from email if needed (legacy compatibility)
+        const cleanAuthorUsername = authorUsername.includes('@') 
+          ? authorUsername.substring(0, authorUsername.indexOf('@'))
+          : authorUsername;
+        
+        if (cleanAuthorUsername === user.username) {
+          setIsOwner(true);
+          return;
+        }
+      }
+
+      // If no direct match, try ownership endpoint
+      const authToken = localStorage.getItem('authToken');
+      if (authToken) {
+        const ownershipResponse = await fetch(`http://localhost:8080/api/v1/stories/${storyId}/ownership`, {
+          headers: {
+            'Authorization': `Bearer ${authToken}`
+          }
+        });
+        
+        if (ownershipResponse.ok) {
+          setIsOwner(true);
+        }
+      }
+    } catch (error) {
+      // If ownership check fails, user is not owner (or not logged in)
+      console.log('Ownership check failed:', error);
+      setIsOwner(false);
     }
   };
 
@@ -131,6 +175,15 @@ export default function PublicStoryView() {
               </p>
             </div>
             <div className="flex items-center space-x-3">
+              {isOwner && (
+                <button 
+                  onClick={() => navigate(`/myworks/${storyId}`)}
+                  className="bg-indigo-500 text-white px-4 py-2 rounded-lg hover:bg-indigo-600 transition-colors flex items-center space-x-2"
+                >
+                  <span>✏️</span>
+                  <span>Edit Story</span>
+                </button>
+              )}
               <button 
                 onClick={handleShareStory}
                 className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors flex items-center space-x-2"
@@ -219,6 +272,15 @@ export default function PublicStoryView() {
               <div>
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="text-lg font-semibold text-gray-800">Chapters</h3>
+                  {isOwner && story.chapters.length > 0 && (
+                    <button
+                      onClick={() => navigate(`/myworks/${storyId}/new-chapter`)}
+                      className="bg-indigo-500 text-white px-3 py-1.5 rounded-lg hover:bg-indigo-600 transition-colors text-sm flex items-center space-x-1"
+                    >
+                      <span>+</span>
+                      <span>New Chapter</span>
+                    </button>
+                  )}
                 </div>
 
                 {/* Chapters List */}
@@ -227,7 +289,16 @@ export default function PublicStoryView() {
                     <div className="text-center py-12 text-gray-500">
                       <div className="text-4xl mb-4">📝</div>
                       <p className="text-lg font-medium mb-2">This story doesn't have chapters yet</p>
-                      <p className="text-sm">The author hasn't published any chapters yet.</p>
+                      <p className="text-sm mb-4">The author hasn't published any chapters yet.</p>
+                      {isOwner && (
+                        <button
+                          onClick={() => navigate(`/myworks/${storyId}/new-chapter`)}
+                          className="bg-indigo-500 text-white px-4 py-2 rounded-lg hover:bg-indigo-600 transition-colors inline-flex items-center space-x-2"
+                        >
+                          <span>✨</span>
+                          <span>Create First Chapter</span>
+                        </button>
+                      )}
                     </div>
                   ) : (
                     story.chapters.map((chapter, index) => (
@@ -259,6 +330,17 @@ export default function PublicStoryView() {
                             </div>
                           </div>
                           <div className="flex items-center space-x-2">
+                            {isOwner && (
+                              <button
+                                onClick={() => navigate(`/myworks/${storyId}/edit/${chapter.id}`)}
+                                className="text-indigo-400 hover:text-indigo-600 p-2"
+                                title="Edit chapter"
+                              >
+                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                  <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/>
+                                </svg>
+                              </button>
+                            )}
                             <button
                               onClick={() => handleShareChapter(chapter.number)}
                               className="text-blue-400 hover:text-blue-600 p-2"

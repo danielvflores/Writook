@@ -1,7 +1,7 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Editor } from '@tinymce/tinymce-react';
-import useAuth from '../config/AuthContext.js';
+import useAuth from '../config/AuthContext.jsx';
 
 export default function ChapterEditor() {
   const { storyId, chapterId } = useParams();

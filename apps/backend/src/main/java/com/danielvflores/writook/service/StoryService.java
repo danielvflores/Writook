@@ -65,7 +65,14 @@ public class StoryService {
             throw new RuntimeException("Historia no encontrada");
         }
         
-        if (!story.getAuthor().getUsername().equals(userFromToken)) {
+        // Check ownership with username extraction for legacy compatibility
+        String authorUsername = story.getAuthor().getUsername();
+        String authorUsernameClean = authorUsername;
+        if (authorUsername.contains("@")) {
+            authorUsernameClean = authorUsername.substring(0, authorUsername.indexOf("@"));
+        }
+        
+        if (!authorUsernameClean.equals(userFromToken)) {
             throw new RuntimeException("No tienes permiso para acceder a este espacio de trabajo");
         }
         

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import useAuth from '../config/AuthContext.js';
+import useAuth from '../config/AuthContext.jsx';
 
 export default function ReadChapter() {
   const { storyId, chapterNumber } = useParams();

@@ -1,7 +1,7 @@
 import '../App.css';
 import { Link, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
-import useAuth from '../config/AuthContext.js';
+import useAuth from '../config/AuthContext.jsx';
 
 function InitialPage() {
   const { user } = useAuth();

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import useAuth from '../config/AuthContext.js';
+import useAuth from '../config/AuthContext.jsx';
 
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -9,10 +9,9 @@ const Navbar = () => {
 
   const links = [
     { name: "Dashboard", href: "/home" },
-    { name: "Mis Historias", href: "/my-stories" },
+    { name: "Mis Historias", href: "/myworks" },
     { name: "Explorar", href: "/explore" },
     { name: "Crear Historia", href: "/create-story" },
-    { name: "🧪 Editor Test", href: "/editor-test" },
   ];
 
   const toggleMobileMenu = () => {

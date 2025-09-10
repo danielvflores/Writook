@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import LoginForm from "../components/LoginForm";
-import useAuth from "../config/AuthContext.js";
+import useAuth from "../config/AuthContext.jsx";
 
 function LoginPage() {
   const { login } = useAuth();
@@ -36,7 +36,8 @@ function LoginPage() {
         login(data.data.token, data.data.user || { username: email });
         showNotification("Login successful! Redirecting...", "success");
         
-        // Immediate navigation - the App.jsx routing will handle the redirect
+        // The AuthProvider will handle the user state change and App.jsx will redirect automatically
+        // We can navigate immediately since the context will update
         navigate("/home", { replace: true });
       } else {
         const errorMessage = data.error || data.message || "Unknown error occurred";
